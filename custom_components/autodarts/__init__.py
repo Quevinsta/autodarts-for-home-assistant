@@ -4,6 +4,8 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN, CONF_HOST, CONF_PORT, DEFAULT_PORT
 from .coordinator import AutodartsCoordinator
 
+PLATFORMS = ["sensor", "binary_sensor"]
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AutodartsCoordinator(
@@ -17,9 +19,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # ⚠️ EXPLICIET per platform (compatibel met alle HA versies)
-    await hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    await hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+    # ✅ JUISTE API VOOR JOUW HA
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
@@ -27,9 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = hass.data[DOMAIN].pop(entry.entry_id)
 
-    await hass.config_entries.async_unload_platforms(
-        entry, ["sensor", "binary_sensor"]
-    )
+    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     return True
 
