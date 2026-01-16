@@ -26,6 +26,9 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._session = aiohttp.ClientSession()
         self._ws: websocket.WebSocketApp | None = None
 
+        # 🔥 expliciete status
+        self._online: bool = False
+
         super().__init__(
             hass,
             _LOGGER,
@@ -38,13 +41,8 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ==================================================
 
     async def async_start(self) -> None:
-        """
-        Start the coordinator:
-        1. Fetch initial state so sensors are NOT 'unknown'
-        2. Connect to WebSocket for live updates
-        """
-        _LOGGER.debug("Fetching initial Autodarts state")
-        await self.async_refresh()          # 🔥 FIX 1: initial fetch
+        # Eerste fetch → status direct correct
+        await self.async_refresh()
         await self._connect_websocket()
 
     # ==================================================
@@ -59,7 +57,6 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 data = json.loads(message)
                 if data.get("type") == "motion_state":
-                    _LOGGER.debug("Motion event received")
                     asyncio.run_coroutine_threadsafe(
                         self._handle_motion_event(),
                         self.hass.loop,
@@ -71,7 +68,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.error("WebSocket error: %s", error)
 
         def on_close(ws):
-            _LOGGER.warning("WebSocket closed, reconnecting in 5 seconds")
+            _LOGGER.warning("WebSocket closed")
             asyncio.run_coroutine_threadsafe(
                 self._reconnect(),
                 self.hass.loop,
@@ -94,28 +91,37 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self._connect_websocket()
 
     async def _handle_motion_event(self) -> None:
-        # Small delay to let Autodarts finish processing the throw
+        # kleine delay zodat Autodarts klaar is
         await asyncio.sleep(0.3)
-        _LOGGER.debug("Refreshing state after motion event")
         await self.async_refresh()
 
     # ==================================================
-    # DATA FETCH
+    # DATA FETCH (STATUS ZIT HIER)
     # ==================================================
 
     async def _async_update_data(self) -> dict[str, Any]:
         url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
-        _LOGGER.debug("Fetching Autodarts state from %s", url)
 
-        async with self._session.get(url, timeout=2) as response:
-            if response.status != 200:
-                raise Exception("Failed to fetch Autodarts state")
+        try:
+            async with self._session.get(url, timeout=2) as response:
+                response.raise_for_status()
+                raw_state = await response.json()
 
-            raw_state = await response.json()
-            parsed = parse_x01_state(raw_state)
+                # ✅ Autodarts is online
+                self._online = True
 
-            _LOGGER.debug("Parsed X01 state: %s", parsed)
-            return parsed
+                data = parse_x01_state(raw_state)
+                data["autodarts_online"] = True
+                return data
+
+        except Exception as err:
+            # ❌ Autodarts offline
+            _LOGGER.error("Autodarts offline: %s", err)
+            self._online = False
+
+            return {
+                "autodarts_online": False,
+            }
 
     # ==================================================
     # SHUTDOWN
