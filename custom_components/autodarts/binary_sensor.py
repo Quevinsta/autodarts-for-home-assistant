@@ -8,6 +8,7 @@ from .const import DOMAIN
 
 
 BINARY_SENSORS = {
+    "autodarts_online": "Autodarts Status",
     "checkout_possible": "Checkout Possible",
 }
 
