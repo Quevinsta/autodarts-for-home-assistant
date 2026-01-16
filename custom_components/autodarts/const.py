@@ -1,5 +1,9 @@
 DOMAIN = "autodarts"
 
+CONF_HOST = "host"
+CONF_PORT = "port"
+DEFAULT_PORT = 3180
+
 AUTODARTS_STATE_PATH = "/api/state"
 AUTODARTS_WS_PATH = "/api/events"
 
