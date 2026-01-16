@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 from datetime import timedelta
 from typing import Any
 
-import aiohttp
-import websocket
+from aiohttp import ClientError
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import AUTODARTS_STATE_PATH, AUTODARTS_WS_PATH
+from .const import AUTODARTS_STATE_PATH
 from .autodarts_api import parse_x01_state
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,63 +21,20 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass = hass
         self.host = host
         self.port = port
-
-        self._session = aiohttp.ClientSession()
-        self._ws: websocket.WebSocketApp | None = None
+        self.session = async_get_clientsession(hass)
 
         super().__init__(
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=timedelta(seconds=10),  # 🔥 HEARTBEAT
+            update_interval=timedelta(seconds=10),  # heartbeat
         )
-
-    async def async_start(self) -> None:
-        await self._connect_websocket()
-        await self.async_refresh()
-
-    # -------------------------------------------------
-    # WEBSOCKET (events)
-    # -------------------------------------------------
-
-    async def _connect_websocket(self) -> None:
-        url = f"ws://{self.host}:{self.port}{AUTODARTS_WS_PATH}"
-        _LOGGER.info("Connecting Autodarts WebSocket: %s", url)
-
-        def on_message(ws, message):
-            try:
-                data = json.loads(message)
-                if data.get("type") == "motion_state":
-                    asyncio.run_coroutine_threadsafe(
-                        self.async_refresh(),
-                        self.hass.loop,
-                    )
-            except Exception as err:
-                _LOGGER.error("WebSocket error: %s", err)
-
-        def on_close(ws):
-            _LOGGER.warning("Autodarts WebSocket closed")
-
-        self._ws = websocket.WebSocketApp(
-            url,
-            on_message=on_message,
-            on_close=on_close,
-        )
-
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            self._ws.run_forever,
-        )
-
-    # -------------------------------------------------
-    # DATA FETCH (heartbeat + data)
-    # -------------------------------------------------
 
     async def _async_update_data(self) -> dict[str, Any]:
         url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
 
         try:
-            async with self._session.get(url, timeout=2) as response:
+            async with self.session.get(url, timeout=5) as response:
                 response.raise_for_status()
                 raw_state = await response.json()
 
@@ -87,10 +42,9 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 data["autodarts_online"] = True
                 return data
 
-        except Exception as err:
-            _LOGGER.warning("Autodarts offline or unreachable: %s", err)
+        except (ClientError, TimeoutError) as err:
+            _LOGGER.warning("Autodarts unreachable: %s", err)
 
-            # ⚠️ HA moet data blijven krijgen → geen 'Verbroken'
             return {
                 "autodarts_online": False,
                 "dart1": "",
@@ -106,9 +60,4 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "is_180": False,
                 "leg_result": "unknown",
             }
-
-    async def async_close(self) -> None:
-        if self._ws:
-            self._ws.close()
-        await self._session.close()
 
