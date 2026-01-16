@@ -10,6 +10,8 @@ from .const import DOMAIN
 BINARY_SENSORS = {
     "autodarts_online": "Autodarts Status",
     "checkout_possible": "Checkout Possible",
+    "leg_won": "Leg Won",
+    "leg_lost": "Leg Lost",
 }
 
 
@@ -42,5 +44,12 @@ class AutodartsBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self):
         data = self.coordinator.data or {}
+
+        if self._key == "leg_won":
+            return data.get("leg_result") == "win"
+
+        if self._key == "leg_lost":
+            return data.get("leg_result") == "lose"
+
         return bool(data.get(self._key, False))
 
