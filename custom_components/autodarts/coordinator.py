@@ -8,7 +8,7 @@ from aiohttp import ClientError
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import AUTODARTS_STATE_PATH
 from .autodarts_api import parse_x01_state
@@ -16,9 +16,25 @@ from .autodarts_api import parse_x01_state
 _LOGGER = logging.getLogger(__name__)
 
 
+EMPTY_STATE: dict[str, Any] = {
+    "autodarts_online": False,
+    "dart1": "",
+    "dart2": "",
+    "dart3": "",
+    "dart1_value": 0,
+    "dart2_value": 0,
+    "dart3_value": 0,
+    "throw_summary": "",
+    "turn_total": 0,
+    "remaining": 0,
+    "checkout_possible": False,
+    "is_180": False,
+    "leg_result": "unknown",
+}
+
+
 class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def __init__(self, hass: HomeAssistant, host: str, port: int) -> None:
-        self.hass = hass
         self.host = host
         self.port = port
         self.session = async_get_clientsession(hass)
@@ -27,7 +43,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=timedelta(seconds=10),  # heartbeat
+            update_interval=timedelta(seconds=10),
         )
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -45,19 +61,10 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except (ClientError, TimeoutError) as err:
             _LOGGER.warning("Autodarts unreachable: %s", err)
 
-            return {
-                "autodarts_online": False,
-                "dart1": "",
-                "dart2": "",
-                "dart3": "",
-                "dart1_value": 0,
-                "dart2_value": 0,
-                "dart3_value": 0,
-                "throw_summary": "",
-                "turn_total": 0,
-                "remaining": 0,
-                "checkout_possible": False,
-                "is_180": False,
-                "leg_result": "unknown",
-            }
+            # ⚠️ NOOIT None returnen
+            return EMPTY_STATE.copy()
+
+        except Exception as err:
+            _LOGGER.exception("Unexpected Autodarts error")
+            raise UpdateFailed(err) from err
 
