@@ -30,14 +30,21 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=None,  # push-based
+            update_interval=None,  # push-based (WebSocket)
         )
 
+    # -------------------------------------------------
+    # STARTUP
+    # -------------------------------------------------
+
     async def async_start(self) -> None:
+        # Eerste fetch zodat sensoren direct gevuld zijn
         await self.async_refresh()
         await self._connect_websocket()
 
-    # ---------------- WEBSOCKET ----------------
+    # -------------------------------------------------
+    # WEBSOCKET
+    # -------------------------------------------------
 
     async def _connect_websocket(self) -> None:
         url = f"ws://{self.host}:{self.port}{AUTODARTS_WS_PATH}"
@@ -55,7 +62,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 _LOGGER.error("WebSocket message error: %s", err)
 
         def on_close(ws):
-            _LOGGER.warning("WebSocket closed")
+            _LOGGER.warning("Autodarts WebSocket closed")
 
         self._ws = websocket.WebSocketApp(
             url,
@@ -68,7 +75,9 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._ws.run_forever,
         )
 
-    # ---------------- DATA FETCH ----------------
+    # -------------------------------------------------
+    # DATA FETCH
+    # -------------------------------------------------
 
     async def _async_update_data(self) -> dict[str, Any]:
         url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
@@ -79,15 +88,17 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raw_state = await response.json()
 
                 data = parse_x01_state(raw_state)
-                data["autodarts_status"] = "online"
+
+                # ✅ CONSISTENTE STATUS KEY
+                data["autodarts_online"] = True
                 return data
 
         except Exception as err:
             _LOGGER.error("Autodarts offline: %s", err)
 
-            # ⚠️ altijd volledige fallback → geen unavailable
+            # ⚠️ VOLLEDIGE fallback → nooit 'Unavailable'
             return {
-                "autodarts_status": "offline",
+                "autodarts_online": False,
                 "dart1": "",
                 "dart2": "",
                 "dart3": "",
@@ -101,6 +112,10 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "is_180": False,
                 "leg_result": "unknown",
             }
+
+    # -------------------------------------------------
+    # SHUTDOWN
+    # -------------------------------------------------
 
     async def async_close(self) -> None:
         if self._ws:
