@@ -1,0 +1,7 @@
+{
+  "name": "Autodarts for Home Assistant",
+  "domain": "autodarts",
+  "homeassistant": "2023.8.0",
+  "country": "NL"
+}
+

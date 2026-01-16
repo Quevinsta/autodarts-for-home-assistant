@@ -1,0 +1,12 @@
+DOMAIN = "autodarts"
+
+CONF_HOST = "host"
+CONF_PORT = "port"
+
+DEFAULT_PORT = 3180
+
+AUTODARTS_WS_PATH = "/api/events"
+AUTODARTS_STATE_PATH = "/api/state"
+
+IMPOSSIBLE_CHECKOUTS = {169, 168, 166, 165, 163, 162, 159}
+
