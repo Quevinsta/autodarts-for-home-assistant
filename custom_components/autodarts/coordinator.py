@@ -30,12 +30,12 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=10,  # 🔥 heartbeat elke 10 sec
+            update_interval=None,  # ❗ GEEN polling
         )
 
     async def async_start(self) -> None:
-        await self._connect_websocket()
         await self.async_refresh()
+        await self._connect_websocket()
 
     # ---------------- WEBSOCKET ----------------
 
@@ -52,7 +52,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         self.hass.loop,
                     )
             except Exception as err:
-                _LOGGER.error("WebSocket error: %s", err)
+                _LOGGER.error("WebSocket message error: %s", err)
 
         def on_close(ws):
             _LOGGER.warning("WebSocket closed")
@@ -76,18 +76,23 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raw_state = await response.json()
 
                 data = parse_x01_state(raw_state)
-                data["autodarts_online"] = "online"
+                data["autodarts_status"] = "online"
                 return data
 
         except Exception as err:
             _LOGGER.error("Autodarts offline: %s", err)
 
+            # ⚠️ VOLLEDIGE DEFAULT STATE → geen unavailable
             return {
-                "autodarts_online": "offline",
-            }
-
-    async def async_close(self) -> None:
-        if self._ws:
-            self._ws.close()
-        await self._session.close()
+                "autodarts_status": "offline",
+                "dart1": "",
+                "dart2": "",
+                "dart3": "",
+                "dart1_value": 0,
+                "dart2_value": 0,
+                "dart3_value": 0,
+                "throw_summary": "",
+                "turn_total": 0,
+                "remaining": 0,
+                "checkout_poss_
 

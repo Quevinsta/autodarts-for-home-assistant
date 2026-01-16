@@ -15,17 +15,14 @@ def dart_to_value(multiplier: int, number: int) -> int:
     return 0
 
 
-def format_dart(multiplier: int, number: int, has_throw: bool) -> str:
-    if not has_throw:
-        return ""  # 🔥 geen worp = leeg
-
+def format_dart(multiplier: int, number: int) -> str:
     if multiplier == 3:
         return f"T{number}"
     if multiplier == 2:
         return f"D{number}"
     if multiplier == 1:
         return f"S{number}"
-    return "M"  # 🔥 echte miss
+    return "M"
 
 
 def is_checkout_possible(remaining: int) -> bool:
@@ -50,7 +47,7 @@ def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
         multiplier = segment.get("multiplier", 0)
         number = segment.get("number", 0)
 
-        darts[i] = format_dart(multiplier, number, True)
+        darts[i] = format_dart(multiplier, number)
         values[i] = dart_to_value(multiplier, number)
 
     remaining = 501
@@ -59,29 +56,5 @@ def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
 
     if players and current_player < len(players):
         remaining = players[current_player].get("score", remaining)
-        checkout_possible = is_checkout_possible(remaining)
-
-        if players[current_player].get("hasWon"):
-            leg_result = "win"
-        elif any(
-            p.get("hasWon")
-            for i, p in enumerate(players)
-            if i != current_player
-        ):
-            leg_result = "lose"
-
-    return {
-        "dart1": darts[0],
-        "dart2": darts[1],
-        "dart3": darts[2],
-        "dart1_value": values[0],
-        "dart2_value": values[1],
-        "dart3_value": values[2],
-        "throw_summary": " | ".join(d for d in darts if d),
-        "turn_total": sum(values),
-        "remaining": remaining,
-        "checkout_possible": checkout_possible,
-        "is_180": sum(values) == 180,
-        "leg_result": leg_result,
-    }
+        chec
 
