@@ -31,15 +31,27 @@ def dart_value(multiplier: int, number: int) -> int:
     return 0
 
 
-def dart_label(multiplier: int, number: int) -> str:
-    if multiplier == 3:
-        return f"T{number}"
-    if multiplier == 2:
-        return f"D{number}"
+def dart_label(multiplier: int | None, number: int | None) -> str:
+    """
+    Returns:
+    - ""  → nog niet gegooid
+    - "M" → echte miss
+    - "S20", "D16", "T20"
+    """
+    if multiplier is None or number is None:
+        return ""
+
+    if multiplier == 0:
+        return "M"
+
     if multiplier == 1:
         return f"S{number}"
-    # multiplier == 0 → echte miss
-    return "M"
+    if multiplier == 2:
+        return f"D{number}"
+    if multiplier == 3:
+        return f"T{number}"
+
+    return ""
 
 
 def is_checkout_possible(remaining: int) -> bool:
@@ -64,20 +76,21 @@ def parse_x01_state(state: dict[str, Any] | None) -> dict[str, Any]:
     # ---- darts ----
     for i in range(min(3, len(throws))):
         segment = throws[i].get("segment") or {}
-        multiplier = segment.get("multiplier", 0)
-        number = segment.get("number", 0)
+
+        multiplier = segment.get("multiplier")
+        number = segment.get("number")
 
         label = dart_label(multiplier, number)
-        value = dart_value(multiplier, number)
+        value = dart_value(multiplier or 0, number or 0)
 
         data[f"dart{i+1}"] = label
         data[f"dart{i+1}_value"] = value
 
-        # Alleen toevoegen als er echt gegooid is
+        # Alleen toevoegen als er echt iets gegooid is
         if label:
             dart_labels.append(label)
 
-    # Throw summary alleen vullen als er darts zijn
+    # Throw summary alleen als er darts zijn
     data["throw_summary"] = " | ".join(dart_labels)
 
     data["turn_total"] = (
