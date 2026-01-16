@@ -38,6 +38,7 @@ def dart_label(multiplier: int, number: int) -> str:
         return f"D{number}"
     if multiplier == 1:
         return f"S{number}"
+    # multiplier == 0 → echte miss
     return "M"
 
 
@@ -58,6 +59,8 @@ def parse_x01_state(state: dict[str, Any] | None) -> dict[str, Any]:
     players = game.get("players") or []
     current_player = state.get("currentPlayer", 0)
 
+    dart_labels: list[str] = []
+
     # ---- darts ----
     for i in range(min(3, len(throws))):
         segment = throws[i].get("segment") or {}
@@ -70,11 +73,17 @@ def parse_x01_state(state: dict[str, Any] | None) -> dict[str, Any]:
         data[f"dart{i+1}"] = label
         data[f"dart{i+1}_value"] = value
 
-    data["throw_summary"] = " | ".join(
-        data[f"dart{i}"] for i in (1, 2, 3) if data[f"dart{i}"]
-    )
+        # Alleen toevoegen als er echt gegooid is
+        if label:
+            dart_labels.append(label)
+
+    # Throw summary alleen vullen als er darts zijn
+    data["throw_summary"] = " | ".join(dart_labels)
+
     data["turn_total"] = (
-        data["dart1_value"] + data["dart2_value"] + data["dart3_value"]
+        data["dart1_value"]
+        + data["dart2_value"]
+        + data["dart3_value"]
     )
 
     # ---- remaining / checkout ----
@@ -85,7 +94,11 @@ def parse_x01_state(state: dict[str, Any] | None) -> dict[str, Any]:
 
         if players[current_player].get("hasWon"):
             data["leg_result"] = "win"
-        elif any(p.get("hasWon") for i, p in enumerate(players) if i != current_player):
+        elif any(
+            p.get("hasWon")
+            for i, p in enumerate(players)
+            if i != current_player
+        ):
             data["leg_result"] = "lose"
 
     data["is_180"] = data["turn_total"] == 180
