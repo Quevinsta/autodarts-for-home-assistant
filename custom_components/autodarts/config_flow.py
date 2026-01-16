@@ -4,7 +4,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 
-from .const import DOMAIN
+DOMAIN = "autodarts"
 
 
 class AutodartsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
