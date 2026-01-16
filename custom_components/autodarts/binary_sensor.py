@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
-    BinarySensorDeviceClass,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -11,10 +8,7 @@ from .const import DOMAIN
 
 
 BINARY_SENSORS = {
-    "autodarts_online": {
-        "name": "Autodarts Status",
-        "device_class": BinarySensorDeviceClass.CONNECTIVITY,
-    },
+    "checkout_possible": "Checkout Possible",
 }
 
 
@@ -23,26 +17,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(
         [
-            AutodartsBinarySensor(
-                coordinator,
-                entry,
-                key,
-                meta["name"],
-                meta["device_class"],
-            )
-            for key, meta in BINARY_SENSORS.items()
+            AutodartsBinarySensor(coordinator, entry, key, name)
+            for key, name in BINARY_SENSORS.items()
         ]
     )
 
 
 class AutodartsBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    def __init__(self, coordinator, entry, key, name, device_class):
+    def __init__(self, coordinator, entry, key, name):
         super().__init__(coordinator)
         self._key = key
 
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_{key}"
-        self._attr_device_class = device_class
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -53,7 +40,6 @@ class AutodartsBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def is_on(self):
-        if not self.coordinator.data:
-            return False
-        return bool(self.coordinator.data.get(self._key))
+        data = self.coordinator.data or {}
+        return bool(data.get(self._key, False))
 
