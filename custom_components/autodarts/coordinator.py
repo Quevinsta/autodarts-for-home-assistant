@@ -33,8 +33,23 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=None,  # push-based
         )
 
+    # ==================================================
+    # STARTUP
+    # ==================================================
+
     async def async_start(self) -> None:
+        """
+        Start the coordinator:
+        1. Fetch initial state so sensors are NOT 'unknown'
+        2. Connect to WebSocket for live updates
+        """
+        _LOGGER.debug("Fetching initial Autodarts state")
+        await self.async_refresh()          # 🔥 FIX 1: initial fetch
         await self._connect_websocket()
+
+    # ==================================================
+    # WEBSOCKET
+    # ==================================================
 
     async def _connect_websocket(self) -> None:
         url = f"ws://{self.host}:{self.port}{AUTODARTS_WS_PATH}"
@@ -44,6 +59,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 data = json.loads(message)
                 if data.get("type") == "motion_state":
+                    _LOGGER.debug("Motion event received")
                     asyncio.run_coroutine_threadsafe(
                         self._handle_motion_event(),
                         self.hass.loop,
@@ -78,18 +94,32 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self._connect_websocket()
 
     async def _handle_motion_event(self) -> None:
+        # Small delay to let Autodarts finish processing the throw
         await asyncio.sleep(0.3)
+        _LOGGER.debug("Refreshing state after motion event")
         await self.async_refresh()
+
+    # ==================================================
+    # DATA FETCH
+    # ==================================================
 
     async def _async_update_data(self) -> dict[str, Any]:
         url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
+        _LOGGER.debug("Fetching Autodarts state from %s", url)
 
         async with self._session.get(url, timeout=2) as response:
             if response.status != 200:
                 raise Exception("Failed to fetch Autodarts state")
 
             raw_state = await response.json()
-            return parse_x01_state(raw_state)
+            parsed = parse_x01_state(raw_state)
+
+            _LOGGER.debug("Parsed X01 state: %s", parsed)
+            return parsed
+
+    # ==================================================
+    # SHUTDOWN
+    # ==================================================
 
     async def async_close(self) -> None:
         if self._ws:
