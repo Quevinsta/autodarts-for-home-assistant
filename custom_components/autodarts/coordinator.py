@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from datetime import timedelta
 from typing import Any
 
 import aiohttp
@@ -30,18 +31,20 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=None,  # push via websocket
+            update_interval=timedelta(seconds=10),  # 🔥 HEARTBEAT
         )
 
     async def async_start(self) -> None:
-        await self.async_refresh()
         await self._connect_websocket()
+        await self.async_refresh()
 
-    # ---------------- WEBSOCKET ----------------
+    # -------------------------------------------------
+    # WEBSOCKET (events)
+    # -------------------------------------------------
 
     async def _connect_websocket(self) -> None:
         url = f"ws://{self.host}:{self.port}{AUTODARTS_WS_PATH}"
-        _LOGGER.info("Connecting to Autodarts WebSocket: %s", url)
+        _LOGGER.info("Connecting Autodarts WebSocket: %s", url)
 
         def on_message(ws, message):
             try:
@@ -68,7 +71,9 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._ws.run_forever,
         )
 
-    # ---------------- DATA FETCH ----------------
+    # -------------------------------------------------
+    # DATA FETCH (heartbeat + data)
+    # -------------------------------------------------
 
     async def _async_update_data(self) -> dict[str, Any]:
         url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
@@ -83,8 +88,9 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return data
 
         except Exception as err:
-            _LOGGER.error("Autodarts offline: %s", err)
+            _LOGGER.warning("Autodarts offline or unreachable: %s", err)
 
+            # ⚠️ HA moet data blijven krijgen → geen 'Verbroken'
             return {
                 "autodarts_online": False,
                 "dart1": "",
