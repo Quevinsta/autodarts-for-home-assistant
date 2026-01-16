@@ -10,9 +10,9 @@ def dart_to_value(multiplier: int, number: int) -> int:
         return number * 3
     if multiplier == 2:
         return number * 2
-    if multiplier == 0:
-        return 0
-    return number
+    if multiplier == 1:
+        return number
+    return 0
 
 
 def format_dart(multiplier: int, number: int) -> str:
@@ -20,9 +20,9 @@ def format_dart(multiplier: int, number: int) -> str:
         return f"T{number}"
     if multiplier == 2:
         return f"D{number}"
-    if multiplier == 0:
-        return f"M{number}"
-    return str(number)
+    if multiplier == 1:
+        return f"S{number}"
+    return "M"
 
 
 def is_checkout_possible(remaining: int) -> bool:
@@ -34,28 +34,28 @@ def is_checkout_possible(remaining: int) -> bool:
 
 
 def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
-    throws = state.get("throws", [])
-    game = state.get("game", {})
-    players = game.get("players", [])
+    throws = state.get("throws") or []
+    game = state.get("game") or {}
+    players = game.get("players") or []
     current_player = state.get("currentPlayer", 0)
 
-    darts = ["0", "0", "0"]
+    # defaults
+    darts = ["M", "M", "M"]
     values = [0, 0, 0]
+    remaining = 501
+    checkout_possible = False
+    leg_result = "playing"
 
     for i in range(min(3, len(throws))):
-        segment = throws[i].get("segment", {})
+        segment = throws[i].get("segment") or {}
         multiplier = segment.get("multiplier", 0)
         number = segment.get("number", 0)
 
         darts[i] = format_dart(multiplier, number)
         values[i] = dart_to_value(multiplier, number)
 
-    remaining = 0
-    checkout_possible = False
-    leg_result = "playing"
-
     if players and current_player < len(players):
-        remaining = players[current_player].get("score", 0)
+        remaining = players[current_player].get("score", remaining)
         checkout_possible = is_checkout_possible(remaining)
 
         if players[current_player].get("hasWon"):
@@ -68,16 +68,29 @@ def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
             leg_result = "lose"
 
     return {
+        # Dart strings
         "dart1": darts[0],
         "dart2": darts[1],
         "dart3": darts[2],
+
+        # Dart values
         "dart1_value": values[0],
         "dart2_value": values[1],
         "dart3_value": values[2],
+
+        # Summary (ALTIJD STRING → nooit Onbekend)
+        "throw_summary": " | ".join(darts),
+
+        # Totals
         "turn_total": sum(values),
         "remaining": remaining,
+
+        # States
         "checkout_possible": checkout_possible,
         "is_180": sum(values) == 180,
         "leg_result": leg_result,
+
+        # Status
+        "autodarts_online": True,
     }
 
