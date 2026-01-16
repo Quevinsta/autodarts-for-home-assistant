@@ -30,7 +30,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="Autodarts",
-            update_interval=None,  # ❗ GEEN polling
+            update_interval=None,  # push-based
         )
 
     async def async_start(self) -> None:
@@ -63,7 +63,10 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             on_close=on_close,
         )
 
-        asyncio.get_event_loop().run_in_executor(None, self._ws.run_forever)
+        asyncio.get_event_loop().run_in_executor(
+            None,
+            self._ws.run_forever,
+        )
 
     # ---------------- DATA FETCH ----------------
 
@@ -82,7 +85,7 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except Exception as err:
             _LOGGER.error("Autodarts offline: %s", err)
 
-            # ⚠️ VOLLEDIGE DEFAULT STATE → geen unavailable
+            # ⚠️ altijd volledige fallback → geen unavailable
             return {
                 "autodarts_status": "offline",
                 "dart1": "",
@@ -94,5 +97,13 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "throw_summary": "",
                 "turn_total": 0,
                 "remaining": 0,
-                "checkout_poss_
+                "checkout_possible": False,
+                "is_180": False,
+                "leg_result": "unknown",
+            }
+
+    async def async_close(self) -> None:
+        if self._ws:
+            self._ws.close()
+        await self._session.close()
 
