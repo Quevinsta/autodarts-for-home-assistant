@@ -15,14 +15,17 @@ def dart_to_value(multiplier: int, number: int) -> int:
     return 0
 
 
-def format_dart(multiplier: int, number: int) -> str:
+def format_dart(multiplier: int, number: int, has_throw: bool) -> str:
+    if not has_throw:
+        return ""  # 🔥 geen worp = leeg
+
     if multiplier == 3:
         return f"T{number}"
     if multiplier == 2:
         return f"D{number}"
     if multiplier == 1:
         return f"S{number}"
-    return "M"
+    return "M"  # 🔥 echte miss
 
 
 def is_checkout_possible(remaining: int) -> bool:
@@ -39,20 +42,20 @@ def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
     players = game.get("players") or []
     current_player = state.get("currentPlayer", 0)
 
-    # defaults
-    darts = ["M", "M", "M"]
+    darts = ["", "", ""]
     values = [0, 0, 0]
-    remaining = 501
-    checkout_possible = False
-    leg_result = "playing"
 
     for i in range(min(3, len(throws))):
         segment = throws[i].get("segment") or {}
         multiplier = segment.get("multiplier", 0)
         number = segment.get("number", 0)
 
-        darts[i] = format_dart(multiplier, number)
+        darts[i] = format_dart(multiplier, number, True)
         values[i] = dart_to_value(multiplier, number)
+
+    remaining = 501
+    checkout_possible = False
+    leg_result = "playing"
 
     if players and current_player < len(players):
         remaining = players[current_player].get("score", remaining)
@@ -68,29 +71,17 @@ def parse_x01_state(state: dict[str, Any]) -> dict[str, Any]:
             leg_result = "lose"
 
     return {
-        # Dart strings
         "dart1": darts[0],
         "dart2": darts[1],
         "dart3": darts[2],
-
-        # Dart values
         "dart1_value": values[0],
         "dart2_value": values[1],
         "dart3_value": values[2],
-
-        # Summary (ALTIJD STRING → nooit Onbekend)
-        "throw_summary": " | ".join(darts),
-
-        # Totals
+        "throw_summary": " | ".join(d for d in darts if d),
         "turn_total": sum(values),
         "remaining": remaining,
-
-        # States
         "checkout_possible": checkout_possible,
         "is_180": sum(values) == 180,
         "leg_result": leg_result,
-
-        # Status
-        "autodarts_online": True,
     }
 
