@@ -8,7 +8,7 @@ from aiohttp import ClientError
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import AUTODARTS_STATE_PATH
 from .autodarts_api import parse_x01_state
@@ -54,17 +54,25 @@ class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 response.raise_for_status()
                 raw_state = await response.json()
 
-                data = parse_x01_state(raw_state)
+                parsed = parse_x01_state(raw_state)
+
+                # 🔒 DEFENSIVE: nooit aannemen dat parsed geldig is
+                if not isinstance(parsed, dict):
+                    _LOGGER.error(
+                        "parse_x01_state returned invalid data: %s", parsed
+                    )
+                    data = EMPTY_STATE.copy()
+                else:
+                    data = parsed
+
                 data["autodarts_online"] = True
                 return data
 
         except (ClientError, TimeoutError) as err:
             _LOGGER.warning("Autodarts unreachable: %s", err)
-
-            # ⚠️ NOOIT None returnen
             return EMPTY_STATE.copy()
 
-        except Exception as err:
+        except Exception:
             _LOGGER.exception("Unexpected Autodarts error")
-            raise UpdateFailed(err) from err
+            return EMPTY_STATE.copy()
 
