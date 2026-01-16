@@ -19,6 +19,7 @@ SENSORS: dict[str, dict[str, Any]] = {
     "dart1_value": {"name": "Dart 1 Value"},
     "dart2_value": {"name": "Dart 2 Value"},
     "dart3_value": {"name": "Dart 3 Value"},
+    "throw_summary": {"name": "Throw Summary"},
     "turn_total": {"name": "Turn Total"},
     "remaining": {"name": "Points Remaining"},
     "leg_result": {"name": "Leg Result"},
@@ -49,10 +50,12 @@ class AutodartsSensor(CoordinatorEntity[AutodartsCoordinator], SensorEntity):
         description: dict[str, Any],
     ) -> None:
         super().__init__(coordinator)
+
         self._key = key
         self._attr_name = description["name"]
         self._attr_unique_id = f"{entry.entry_id}_{key}"
 
+        # 🔥 Device info (zoals afgesproken)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name="Autodarts for Home Assistant",
