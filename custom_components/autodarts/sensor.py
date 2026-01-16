@@ -55,8 +55,8 @@ class AutodartsSensor(CoordinatorEntity[AutodartsCoordinator], SensorEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Autodarts",
-            manufacturer="Autodarts",
+            name="Autodarts for Home Assistant",
+            manufacturer="Quevinsta",
             model="X01",
         )
 
