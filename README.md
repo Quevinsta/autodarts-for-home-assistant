@@ -1,5 +1,15 @@
 ![Autodarts for Home Assistant](https://raw.githubusercontent.com/Quevinsta/autodarts-for-home-assistant/main/images/icon.png)
 
+![GitHub release](https://img.shields.io/github/v/release/Quevinsta/autodarts-for-home-assistant)
+![Downloads](https://img.shields.io/github/downloads/Quevinsta/autodarts-for-home-assistant/total)
+![Downloads latest](https://img.shields.io/github/downloads/Quevinsta/autodarts-for-home-assistant/latest/total)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-41BDF5?logo=home-assistant&logoColor=white)
+![HACS](https://img.shields.io/badge/HACS-Custom-orange)
+![Autodarts](https://img.shields.io/badge/Autodarts-X01-purple)
+![Platform](https://img.shields.io/badge/platform-Home%20Assistant-blue)
+![License](https://img.shields.io/github/license/Quevinsta/autodarts-for-home-assistant)
+![Stars](https://img.shields.io/github/stars/Quevinsta/autodarts-for-home-assistant?style=social)
+
 # 🎯 Autodarts for Home Assistant
 
 ---
