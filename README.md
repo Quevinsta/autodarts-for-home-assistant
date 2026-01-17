@@ -2,11 +2,8 @@
 
 ![GitHub release](https://img.shields.io/github/v/release/Quevinsta/autodarts-for-home-assistant)
 ![Downloads](https://img.shields.io/github/downloads/Quevinsta/autodarts-for-home-assistant/total)
-![Downloads latest](https://img.shields.io/github/downloads/Quevinsta/autodarts-for-home-assistant/latest/total)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-41BDF5?logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange)
-![Autodarts](https://img.shields.io/badge/Autodarts-X01-purple)
-![Platform](https://img.shields.io/badge/platform-Home%20Assistant-blue)
 ![License](https://img.shields.io/github/license/Quevinsta/autodarts-for-home-assistant)
 ![Stars](https://img.shields.io/github/stars/Quevinsta/autodarts-for-home-assistant?style=social)
 
@@ -17,28 +14,25 @@
 ## 🇬🇧 English
 
 ### Overview
+**Autodarts for Home Assistant** is a local Home Assistant integration for **Autodarts X01 systems**.
 
-**Autodarts for Home Assistant** is a local Home Assistant integration for **Autodarts X01** systems.
-
-It provides real-time dart game information directly from Autodarts, without any cloud dependency.
+It provides **real-time dart game data** directly from Autodarts, without any cloud dependency.
 
 ---
 
 ### ✨ Features
-
-- 🎯 Dart 1 / 2 / 3 with **S / D / T / M**
+- 🎯 Dart 1 / 2 / 3 with **S / D / T / M** notation  
 - 🧾 Throw Summary (e.g. `T20 | T20 | D20`)
-- 🧮 Turn Total
-- 📉 Remaining score
+- ➕ Turn Total
+- 🎯 Remaining score
 - ✅ Checkout Possible (binary sensor)
 - 🟢 Autodarts Status (online / offline)
-- 🏆 Leg Won / ❌ Leg Lost
-- Fully local (HTTP polling)
+- 🏆 Leg Won / ❌ Leg Lost (binary sensors)
+- 🔒 Fully local (HTTP polling)
 
 ---
 
 ### 📦 Installation (HACS)
-
 1. Go to **HACS → Integrations**
 2. Add this repository as a **Custom Repository**
 3. Search for **Autodarts for Home Assistant**
@@ -48,104 +42,90 @@ It provides real-time dart game information directly from Autodarts, without any
 ---
 
 ### ⚙️ Configuration
-
 After installation:
-
 1. Go to **Settings → Devices & Services**
-2. Click **Add Integration**
-3. Select **Autodarts for Home Assistant**
+2. Click **Add integration**
+3. Search for **Autodarts**
 4. Enter:
-   - **Host**: IP address of Autodarts
-   - **Port**: default `3180`
+   - **Host** (IP address of Autodarts)
+   - **Port** (default: `3180`)
 
 ---
 
-### 🧩 Entities
+### 🧠 Supported Game Modes
+- X01 (501 / 301 / custom)
 
-#### Sensors
-- Dart 1 / Dart 2 / Dart 3
+---
+
+### 🧩 Sensors
+- Dart 1 / 2 / 3
 - Dart values
 - Throw Summary
 - Turn Total
-- Remaining
-- Leg Result
-
-#### Binary Sensors
-- Autodarts Status
+- Remaining score
 - Checkout Possible
-- Leg Won
-- Leg Lost
+- Autodarts Status
+- Leg Won / Lost
 
 ---
+
+### 🛠️ Troubleshooting
+- Ensure Autodarts is running and reachable via browser
+- Check Home Assistant logs for integration errors
+- Restart Home Assistant after updates
+
+---
+
+### 📄 License
+MIT License
 
 ---
 
 ## 🇳🇱 Nederlands
 
 ### Overzicht
+**Autodarts for Home Assistant** is een lokale Home Assistant-integratie voor **Autodarts X01-systemen**.
 
-**Autodarts for Home Assistant** is een lokale Home Assistant integratie voor **Autodarts X01** systemen.
-
-De integratie toont realtime dartinformatie, direct vanuit Autodarts, zonder cloud of externe services.
+De integratie toont **real-time dartinformatie** rechtstreeks vanuit Autodarts, zonder cloud of externe diensten.
 
 ---
 
-### ✨ Functionaliteiten
-
-- 🎯 Dart 1 / 2 / 3 met **S / D / T / M**
-- 🧾 Throw Summary (bijv. `T20 | T20 | D20`)
-- 🧮 Turn Total
-- 📉 Remaining score
-- ✅ Checkout Possible (binary sensor)
-- 🟢 Autodarts Status (online / offline)
-- 🏆 Leg Won / ❌ Leg Lost
-- Volledig lokaal (HTTP polling)
+### ✨ Functies
+- 🎯 Pijl 1 / 2 / 3 met **S / D / T / M** notatie  
+- 🧾 Worp samenvatting (bijv. `T20 | T20 | D20`)
+- ➕ Beurt totaal
+- 🎯 Resterende score
+- ✅ Checkout mogelijk (binaire sensor)
+- 🟢 Autodarts status (online / offline)
+- 🏆 Leg gewonnen / ❌ Leg verloren
+- 🔒 Volledig lokaal (HTTP polling)
 
 ---
 
 ### 📦 Installatie (HACS)
-
 1. Ga naar **HACS → Integraties**
 2. Voeg deze repository toe als **Custom Repository**
-3. Zoek **Autodarts for Home Assistant**
+3. Zoek naar **Autodarts for Home Assistant**
 4. Installeer de integratie
 5. Herstart Home Assistant
 
 ---
 
 ### ⚙️ Configuratie
-
 Na installatie:
-
-1. Ga naar **Instellingen → Apparaten & diensten**
-2. Klik **Integratie toevoegen**
-3. Kies **Autodarts for Home Assistant**
+1. Ga naar **Instellingen → Apparaten & Services**
+2. Klik op **Integratie toevoegen**
+3. Zoek naar **Autodarts**
 4. Vul in:
-   - **Host**: IP-adres van Autodarts
-   - **Port**: standaard `3180`
+   - **Host** (IP-adres van Autodarts)
+   - **Poort** (standaard: `3180`)
 
 ---
 
-### 🧩 Entiteiten
-
-#### Sensoren
-- Dart 1 / Dart 2 / Dart 3
-- Dart values
-- Throw Summary
-- Turn Total
-- Remaining
-- Leg Result
-
-#### Binary sensors
-- Autodarts Status
-- Checkout Possible
-- Leg Won
-- Leg Lost
+### 🎯 Ondersteunde speltypen
+- X01 (501 / 301 / aangepast)
 
 ---
 
-## 🛠️ Developer
-
-Created by **Quevinsta**  
-For the Home Assistant & Autodarts community ❤️
-
+### 📄 Licentie
+MIT-licentie
