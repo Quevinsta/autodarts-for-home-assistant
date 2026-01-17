@@ -1,3 +1,5 @@
+![Autodarts for Home Assistant](https://raw.githubusercontent.com/Quevinsta/autodarts-for-home-assistant/main/images/icon.png)
+
 # 🎯 Autodarts for Home Assistant
 
 ---
