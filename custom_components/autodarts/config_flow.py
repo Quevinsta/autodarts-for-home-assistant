@@ -23,6 +23,10 @@ class AutodartsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required("host"): str,
                     vol.Required("port", default=3180): int,
+                    vol.Optional(
+                        "experimental_websocket",
+                        default=False,
+                    ): bool,
                 }
             ),
         )
