@@ -1,78 +1,74 @@
-from __future__ import annotations
-
+import asyncio
 import logging
 from datetime import timedelta
-from typing import Any
 
-from aiohttp import ClientError
-
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.core import HomeAssistant
 
-from .const import AUTODARTS_STATE_PATH
-from .autodarts_api import parse_x01_state
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-EMPTY_STATE: dict[str, Any] = {
-    "autodarts_online": False,
-    "dart1": "",
-    "dart2": "",
-    "dart3": "",
-    "dart1_value": 0,
-    "dart2_value": 0,
-    "dart3_value": 0,
-    "throw_summary": "",
-    "turn_total": 0,
-    "remaining": 0,
-    "checkout_possible": False,
-    "is_180": False,
-    "leg_result": "unknown",
-}
-
-
-class AutodartsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    def __init__(self, hass: HomeAssistant, host: str, port: int) -> None:
-        self.host = host
-        self.port = port
-        self.session = async_get_clientsession(hass)
-
+class AutodartsCoordinator(DataUpdateCoordinator[dict]):
+    def __init__(self, hass: HomeAssistant, host: str, port: int):
         super().__init__(
             hass,
             _LOGGER,
-            name="Autodarts",
-            update_interval=timedelta(seconds=10),
+            name=DOMAIN,
+            update_interval=timedelta(seconds=30),  # fallback, WS is realtime
         )
 
-    async def _async_update_data(self) -> dict[str, Any]:
-        url = f"http://{self.host}:{self.port}{AUTODARTS_STATE_PATH}"
+        self.host = host
+        self.port = port
 
-        try:
-            async with self.session.get(url, timeout=5) as response:
-                response.raise_for_status()
-                raw_state = await response.json()
+        self.data = {
+            "online": False,
+        }
 
-                parsed = parse_x01_state(raw_state)
+        self._ws = None
+        self._ws_started = False
 
-                # 🔒 DEFENSIVE: nooit aannemen dat parsed geldig is
-                if not isinstance(parsed, dict):
-                    _LOGGER.error(
-                        "parse_x01_state returned invalid data: %s", parsed
-                    )
-                    data = EMPTY_STATE.copy()
-                else:
-                    data = parsed
+    async def _async_update_data(self) -> dict:
+        """
+        Called by HA to check availability.
+        We NEVER block here.
+        """
+        return self.data
 
-                data["autodarts_online"] = True
-                return data
+    async def start_websocket(self):
+        """Start WebSocket AFTER HA setup is complete"""
+        if self._ws_started:
+            return
 
-        except (ClientError, TimeoutError) as err:
-            _LOGGER.warning("Autodarts unreachable: %s", err)
-            return EMPTY_STATE.copy()
+        self._ws_started = True
 
-        except Exception:
-            _LOGGER.exception("Unexpected Autodarts error")
-            return EMPTY_STATE.copy()
+        # ⚠️ Lazy import to prevent circular import
+        from .ws_direct import AutodartsWebSocket
+
+        self._ws = AutodartsWebSocket(
+            self.host,
+            self.port,
+            self._handle_ws_event,
+        )
+
+        await self._ws.start()
+        _LOGGER.info("Autodarts WebSocket started")
+
+    async def _handle_ws_event(self, payload: dict):
+        """
+        Handle incoming WS events from Autodarts
+        """
+        # Mark online as soon as we get data
+        self.data["online"] = True
+
+        # Merge payload into coordinator data
+        self.data.update(payload)
+
+        # Push update to HA immediately
+        self.async_set_updated_data(self.data)
+
+    async def stop(self):
+        if self._ws:
+            await self._ws.stop()
 
