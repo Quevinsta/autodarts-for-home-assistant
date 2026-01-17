@@ -19,8 +19,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # ✅ JUISTE API VOOR JOUW HA
+    # 1️⃣ Eerst platforms laden (entities bestaan nu)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # 2️⃣ PAS DAARNA WebSocket starten (🔥 belangrijk)
+    hass.async_create_task(coordinator.start_websocket())
 
     return True
 
@@ -28,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = hass.data[DOMAIN].pop(entry.entry_id)
 
-    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    await coordinator.stop()
 
-    return True
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
